@@ -212,4 +212,16 @@ SOCIAL_AUTH_YAHOO_OAUTH2_SECRET = '2a2e872ae9c4bf7b3a0045becd380266e229b03e'
 
 SITE_ID = 1
 STRIPE_KEY = "sk_test_51H4o50DLCEyNZL8YOpFgmi8jI0sWDslQ9GRkPZ12SqkglAkJiidioJGvV0MV0vEYNLVF7Mqd9qbvEhOEDyDslxzg00L3V56wUF"
-SESSION_COOKIE_AGE = 60 * 60 * 24 * int(config('LOGIN_DAYS_THRESHOLD'))
+SESSION_COOKIE_AGE = 60#* 60 * 24 * int(config('LOGIN_DAYS_THRESHOLD'))
+
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+)
+
