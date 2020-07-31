@@ -1,0 +1,73 @@
+{% extends 'base.html' %} {% load crispy_forms_tags %} {% block title %} Membership {% endblock title %} {% block content %}
+
+<!-- form errors -->
+{% if form.errors %} {% for field in form %} {% for error in field.errors %}
+<div class="alert alert-danger">{{field.name}}<strong> {{ error|escape }}</strong></div>
+{% endfor %} {% endfor %} {% for error in form.non_field_errors %}
+<div class="alert alert-danger">{{field.name}} <strong>{{ error|escape }}</strong></div>
+{% endfor %} {% endif %}
+
+<div class="m-4 p-4">
+    <h3>Membership</h3>
+    <br />
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-md-12">
+                <h6 class="ml-5">Choose your plan:</h6>
+
+                <li style="list-style: none;">
+                    {% for model_instance in form.membership_type.field.choices.queryset %}
+                    <ul>
+                        <strong>
+                            <span>
+                                {{model_instance.type_name}}&nbsp;&nbsp;
+                            </span>
+                        </strong>
+                        <span class="badge badge-primary">
+                            Monthly
+                        </span>
+                        <span>{{ model_instance.monthly_price }}</span>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <span class="badge badge-primary">
+                            Yearly
+                        </span>
+
+                        <span>{{ model_instance.yearly_price_after_discount }}</span>
+                    </ul>
+                    <br />
+                    {% endfor %}
+                </li>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">{{form.membership_type|as_crispy_field}}</div>
+            <div class="col-md-4">{{form.membership_term|as_crispy_field}}</div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-2">{{form.title|as_crispy_field}}</div>
+            <div class="col-md-3">{{form.first_name|as_crispy_field}}</div>
+            <div class="col-md-3">{{form.last_name|as_crispy_field}}</div>
+            <div class="col-md-4">{{form.email|as_crispy_field}}</div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">{{form.address|as_crispy_field}}</div>
+        </div>
+
+        <div class="row"></div>
+
+        <div class="row">
+            <div class="col-md-4">{{form.city|as_crispy_field}}</div>
+            <div class="col-md-4">{{form.city_name|as_crispy_field}}</div>
+            <div class="col-md-4">{{form.country|as_crispy_field}}</div>
+        </div>
+        <br />
+        <input class="btn btn-primary float-right" type="submit" value="Proceed to Payment" />
+    </form>
+</div>
+
+{% endblock content %}
