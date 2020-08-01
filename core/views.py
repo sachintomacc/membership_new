@@ -42,6 +42,10 @@ def user_preferences(request):
         instance.user  = request.user
         instance.save()
         form.save_m2m()
+        user_profile = UserProfile.objects.get(user=request.user)
+        user_profile.has_saved_preferences = True
+        user_profile.save()
+
         messages.success(request,'Your preferences has been saved !')
         return redirect('thankyou')
 
