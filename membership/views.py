@@ -9,7 +9,46 @@ from django.views.generic import View
 from django.contrib.auth.decorators import login_required
 import stripe
 import datetime
+from core.models import UserProfile
 stripe.api_key = settings.STRIPE_KEY
+
+
+@login_required
+def membership(request):
+
+    if request.method == 'POST':
+        form = MembershipDetailForm(request.POST)
+        if form.is_valid():
+            # request.session['MembershipDetails'] = form.cleaned_data
+            request.session['MembershipDetails'] = request.POST
+            request.session['payment_type'] = 'membership'
+            return redirect('stripe_payment')
+
+            # instance = form.save(commit=False)
+            # instance.user = request.user
+            # instance.first_name = request.user.first_name
+            # instance.last_name = request.user.last_name
+            # if form.cleaned_data.get('city') != '':
+            #     city = City()
+            #     city.name = form.cleaned_data.get('city')
+            #     city.save()
+            #     instance.city_id = city
+
+            # instance.save()
+            # request.session['payment_type'] = 'membership'
+
+            # return redirect('stripee_create_membership')
+        else:
+            print('invalid')
+            # instance = form.save()
+            context = {'form': form}
+            return render(request, 'membership.html', context)
+
+    form_intial_values = {
+        'first_name': request.user.first_name, 'last_name': request.user.last_name}
+    form = MembershipDetailForm(initial=form_intial_values)
+    context = {'form': form}
+    return render(request, 'membership.html', context)
 
 
 def create_donation(request):
@@ -26,45 +65,86 @@ def create_donation(request):
     return redirect(reverse('thankyou'))
 
 
-def chargeCustomer(request):
-    print('======chargeCustomer============')
-    customer = stripe.Customer.create(
-        email=request.POST['email'], name=request.POST['name'], source=request.POST['stripeToken'])
+def create_membership(request):
 
-    user_membership_detail = MembershipDetail.objects.get(user=request.user)
-    user_membership_detail.stripe_customer_id = customer.id
-    user_membership_type = user_membership_detail.membership_type
-    if user_membership_detail.membership_term == 'M':
-        price_id = user_membership_type.stripe_monthly_price_id
-        amount = user_membership_type.monthly_price
-        description = user_membership_type.type_name + ' Monthly Plan Payment'
+    membership_type = MembershipType.objects.get(
+        id=int(request.session['MembershipDetails'].get('membership_type')))
 
-    elif user_membership_detail.membership_term == 'Y':
-        price_id = user_membership_type.stripe_yearly_price_id
-        amount = user_membership_type.yearly_price_after_discount
-        description = user_membership_type.type_name + ' Yearly Plan Payment'
+    if request.session['MembershipDetails'].get('membership_term') == 'M':
+        price_id = membership_type.stripe_monthly_price_id
+        amount = membership_type.monthly_price
+        description = membership_type.name + ' Monthly Plan Payment'
 
-    stripe.Subscription.create(
-        customer=customer.id,
-        items=[
-            {"price": price_id},
-        ],
-    )
-    user_membership_detail.is_paid_up = True
-    user_membership_detail.date_joined = datetime.date.today()
-    user_membership_detail.save()
+    elif request.session['MembershipDetails'].get('membership_term') == 'Y':
+        price_id = membership_type.stripe_yearly_price_id
+        amount = membership_type.yearly_price
+        description = membership_type.name + ' Yearly Plan Payment'
+    
+    if request.session['MembershipDetails'].get('city_name') != '':
+        new_city = City.objects.create(name=request.session['MembershipDetails'].get('city_name'))
+        user_city = new_city
+    else:
+        user_city = City.objects.get(id=int(request.session['MembershipDetails'].get('city')))
 
-    user_payment_history = MemberPaymentHistory()
-    user_payment_history.user = request.user
-    user_payment_history.amount = amount
-    user_payment_history.description = description
-    user_payment_history.save()
+    try:
+        customer = stripe.Customer.create(
+            email=request.session['MembershipDetails'].get('email'), name=f'{request.user.first_name} {request.user.last_name}', source=request.POST['stripeToken'])
 
-    group = Group.objects.get(name=user_membership_type.membership_group)
-    group.user_set.add(request.user)
+        stripe.Subscription.create(
+            customer=customer.id,
+            items=[
+                {"price": price_id},
+            ],
+        )
 
-    messages.success(request, 'Your membership has been activated !')
-    return redirect(reverse('thankyou'))
+        user_membership_detail = MembershipDetail.objects.create(user=request.user, membership_type=membership_type, membership_term=request.session['MembershipDetails'].get('membership_term'),
+                                                                    title=Title.objects.get(id=int(request.session['MembershipDetails'].get('title'))),
+                                                                    first_name=request.user.first_name,
+                                                                    last_name=request.user.last_name,
+                                                                    city=user_city,
+                                                                    address=request.session['MembershipDetails'].get('address'),
+                                                                    country=request.session['MembershipDetails'].get('country'),
+                                                                    email=request.session['MembershipDetails'].get('email'),
+                                                                    telephone=request.session['MembershipDetails'].get('telephone'),
+                                                                    date_joined=datetime.date.today(),
+                                                                    is_paid_up = True
+                                                                    )
+
+        user_profile = UserProfile.objects.get(user=request.user)
+        user_profile.stripe_customer_id = customer.id
+        user_profile.is_member = True
+        user_profile.save()
+        #clear session vars
+        messages.success(request, 'Your membership has been activated !')
+        return redirect(reverse('thankyou'))
+    
+    except stripe.error.CardError as e:
+        messages.error(self.request, 'CardError')
+    except stripe.error.RateLimitError as e:
+        messages.error(self.request, 'RateLimitError')
+    except stripe.error.InvalidRequestError as e:
+        messages.error(self.request, 'InvalidRequestError')
+    except stripe.error.AuthenticationError as e:
+        messages.error(self.request, 'AuthenticationError')
+    except stripe.error.APIConnectionError as e:
+        messages.error(self.request, 'APIConnectionError')
+    except stripe.error.StripeError as e:
+        messages.error(self.request, 'StripeError')
+    except Exception as e:
+        messages.error(self.request, e.error)
+   
+    # user_membership_detail.is_paid_up = True
+    # user_membership_detail.date_joined = datetime.date.today()
+    # user_membership_detail.save()
+
+    # user_payment_history = MemberPaymentHistory()
+    # user_payment_history.user = request.user
+    # user_payment_history.amount = amount
+    # user_payment_history.description = description
+    # user_payment_history.save()
+
+    # group = Group.objects.get(name=user_membership_type.membership_group)
+    # group.user_set.add(request.user)
 
 
 # def create_subscription(request,customer,price):
@@ -124,13 +204,16 @@ def stripee_create_membership(request):
 
 
 def payment_history(request):
-    
-    return render(request, 'payment_history.html')
 
+    return render(request, 'payment_history.html')
 
 
 def stripee_create_donation(request):
     return render(request, 'stripee_create_donation.html')
+
+
+def stripe_payment(request):
+    return render(request, 'stripe_payment.html')
 
 
 # class StripeView(View):
@@ -151,60 +234,6 @@ def stripee_create_donation(request):
 
 def stripee_two(request):
     return render(request, 'stripee_two.html')
-
-
-@login_required
-def membership(request):
-
-    if request.method == 'POST':
-        form = MembershipDetailForm(request.POST)
-        if form.is_valid():
-            instance = form.save(commit=False)
-            instance.user = request.user
-            instance.first_name = request.user.first_name
-            instance.last_name = request.user.last_name
-            if form.cleaned_data.get('city') != '':
-                city = City()
-                city.name = form.cleaned_data.get('city')
-                city.save()
-                instance.city_id = city
-
-            instance.save()
-            request.session['payment_type'] = 'membership'
-            # request.session['amount'] = get_membership_amount(
-            #     instance.membership_type, instance.membership_term)
-
-            return redirect('stripee_create_membership')
-            # if not request.GET._mutable:
-            #     request.GET._mutable = True
-            # request.GET['payment_type'] = 'membership'
-            # print('GET=========',request.GET)
-            # context = {'payment_type':'membership'}
-            # return redirect(reverse('stripee',kwargs={'payment_type':'membership'}))
-            # redirect(reverse('url_to_redirect_to', kwargs={'args_1':value}))
-        else:
-            print('invalid')
-            # instance = form.save()
-            context = {'form': form}
-            return render(request, 'membership.html', context)
-
-    # initial = {
-    #     'first_name': request.user.first_name,
-    #     'email': request.user.email}
-    # first_name = request.user.first_name
-    # last_name = request.user.last_name
-    # form = JournalForm(initial={'tank': 123})
-    # print('first = ',request.user.first_name)
-    # print('last = ',request.user.last_name)
-    # if not request.GET._mutable:
-    #     request.GET._mutable = True
-    # request.GET['payment_type'] = 'membership'
-    # print('GET=========', request.GET)
-    form_intial_values = {
-        'first_name': request.user.first_name, 'last_name': request.user.last_name}
-    form = MembershipDetailForm(initial=form_intial_values)
-    context = {'form': form}
-    return render(request, 'membership.html', context)
 
 
 def donation(request):

@@ -22,7 +22,7 @@
                     <ul>
                         <strong>
                             <span>
-                                {{model_instance.type_name}}&nbsp;&nbsp;
+                                {{model_instance.name}}&nbsp;&nbsp;
                             </span>
                         </strong>
                         <span class="badge badge-primary">
@@ -34,7 +34,7 @@
                             Yearly
                         </span>
 
-                        <span>{{ model_instance.yearly_price_after_discount }}</span>
+                        <span>{{ model_instance.yearly_price }}</span>
                     </ul>
                     <br />
                     {% endfor %}
@@ -55,7 +55,8 @@
         </div>
 
         <div class="row">
-            <div class="col-md-12">{{form.address|as_crispy_field}}</div>
+            <div class="col-md-8">{{form.address|as_crispy_field}}</div>
+            <div class="col-md-4">{{form.telephone|as_crispy_field}}</div>
         </div>
 
         <div class="row"></div>

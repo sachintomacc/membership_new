@@ -33,7 +33,6 @@ class MembershipDetail(models.Model):
     date_terminated = models.DateField(null=True, blank=True)
     is_paid_up = models.BooleanField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
-    stripe_customer_id = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
         verbose_name = 'MembershipDetail'
@@ -44,10 +43,9 @@ class MembershipDetail(models.Model):
 
 
 class MembershipType(models.Model):
-    type_name = models.CharField(max_length=50)
-    membership_group = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
     monthly_price = models.IntegerField()
-    yearly_price_after_discount = models.IntegerField()
+    yearly_price = models.IntegerField()
     stripe_monthly_price_id = models.CharField(max_length=50)
     stripe_yearly_price_id = models.CharField(max_length=50)
 
@@ -57,11 +55,12 @@ class MembershipType(models.Model):
         verbose_name_plural = 'MembershipTypes'
 
     def __str__(self):
-        return self.type_name
+        return self.name
 
 
 class MemberPaymentHistory(models.Model):   
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    ref_code = models.CharField(max_length=25)
     amount = models.FloatField()
     description = models.CharField(max_length=50, null=True, blank=True)
 

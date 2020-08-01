@@ -34,7 +34,7 @@ class MembershipDetailForm(forms.ModelForm):
         model = MembershipDetail
         # fields = "__all__"
         fields = ["membership_type", "membership_term", "title", "country",
-                  "first_name", "last_name", "email", "address", "city", "city_name", ]
+                  "first_name", "last_name", "email", "address", "city", "city_name","telephone" ]
 
 
 def __init__(self, *args, **kwargs):

@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'sslserver',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.microsoft',
     'django_shortcuts',
     'django_countries',
     'stripe',
@@ -150,6 +154,7 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.yahoo.YahooOpenId',
 
     'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 )
 
 
@@ -212,7 +217,7 @@ SOCIAL_AUTH_YAHOO_OAUTH2_SECRET = '2a2e872ae9c4bf7b3a0045becd380266e229b03e'
 
 SITE_ID = 1
 STRIPE_KEY = "sk_test_51H4o50DLCEyNZL8YOpFgmi8jI0sWDslQ9GRkPZ12SqkglAkJiidioJGvV0MV0vEYNLVF7Mqd9qbvEhOEDyDslxzg00L3V56wUF"
-SESSION_COOKIE_AGE = 60#* 60 * 24 * int(config('LOGIN_DAYS_THRESHOLD'))
+SESSION_COOKIE_AGE = 60* 60 * 1 * int(config('LOGIN_DAYS_THRESHOLD'))
 
 
 SOCIAL_AUTH_PIPELINE = (
@@ -225,3 +230,13 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.user.user_details',
 )
 
+]
+SOCIALACCOUNT_PROVIDERS = {
+    'microsoft': {
+        'APP': {
+            'client_id': '9ad389bb-a5e1-4d04-9f0f-069fe7d5929a',
+            'secret': 'f88edfd3-f6ac-4674-a989-6590eec2398a',
+            'key': ''
+        }
+    }
+}

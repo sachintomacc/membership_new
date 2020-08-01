@@ -74,6 +74,20 @@
         </nav>
 
         <div class="container">
+
+<p>
+
+    Auth            
+</p>
+    {%  if user.is_authenticated %}
+
+    <p> Helloooo {{user.username}}</p>
+
+    {% endif %}
+
+
+
+
             {% include 'messages.html' %} {% block content %} {% endblock content %}
         </div>
 
