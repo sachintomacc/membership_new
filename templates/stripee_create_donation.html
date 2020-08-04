@@ -40,7 +40,7 @@
 <div class="row ml-5 mt-2 pt-5 justify-content-center">
     <div class="col-md-6 col-md-offset-6">
         <form  method="post" id="payment-form" action="{% url 'create_donation' %}">
-            {% csrf_token %}
+            {% csrf_token %}+
             <div class="form-row1">
                 <input type="hidden" value={{payment_type}} name="payment_type" />
                 <input type="text" name="name" placeholder="Name" class="form-control" />

@@ -14,6 +14,9 @@ MESSAGE_TAGS = {
     messages.ERROR: 'alert-warning',
 }
 
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -36,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     'django.contrib.sites',
     'sslserver',
     'allauth',
@@ -56,6 +60,7 @@ INSTALLED_APPS = [
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -158,9 +163,6 @@ AUTHENTICATION_BACKENDS = (
 )
 
 
-
-
-
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'
 LOGIN_REDIRECT_URL = 'home'
@@ -210,14 +212,12 @@ SOCIAL_AUTH_INSTAGRAM_SECRET = config('SOCIAL_AUTH_INSTAGRAM_SECRET')
 SOCIAL_AUTH_INSTAGRAM_EXTRA_DATA = [('user', 'user'), ]
 
 
-URL = 'https://api.login.yahoo.com/oauth2/request_auth'
-SOCIAL_AUTH_YAHOO_OAUTH2_KEY = 'dj0yJmk9WXJYSFBkcUczRmpzJnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTQ0'
-SOCIAL_AUTH_YAHOO_OAUTH2_SECRET = '2a2e872ae9c4bf7b3a0045becd380266e229b03e'
+
 
 
 SITE_ID = 1
-STRIPE_KEY = "sk_test_51H4o50DLCEyNZL8YOpFgmi8jI0sWDslQ9GRkPZ12SqkglAkJiidioJGvV0MV0vEYNLVF7Mqd9qbvEhOEDyDslxzg00L3V56wUF"
-SESSION_COOKIE_AGE = 60* 60 * 1 * int(config('LOGIN_DAYS_THRESHOLD'))
+STRIPE_KEY = config('STRIPE_KEY')
+SESSION_COOKIE_AGE = 60 * 5 * int(config('LOGIN_DAYS_THRESHOLD'))
 
 
 SOCIAL_AUTH_PIPELINE = (
@@ -230,13 +230,15 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.user.user_details',
 )
 
-]
+
+
 SOCIALACCOUNT_PROVIDERS = {
     'microsoft': {
         'APP': {
-            'client_id': '9ad389bb-a5e1-4d04-9f0f-069fe7d5929a',
-            'secret': 'f88edfd3-f6ac-4674-a989-6590eec2398a',
+            'client_id': config('MICROSOFT_CLIENT_ID'),
+            'secret': config('MICROSOFT_SECRET'),
             'key': ''
         }
     }
 }
+

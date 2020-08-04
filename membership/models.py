@@ -21,18 +21,19 @@ class MembershipDetail(models.Model):
         'MembershipType', on_delete=models.CASCADE)
     membership_term = models.CharField(max_length=50, choices=TERM_CHOICES)
     title = models.ForeignKey(
-        'Title', null=True, blank=True, on_delete=models.SET_NULL)
+        'Title', on_delete=models.SET_NULL, null=True, default=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     address = models.CharField(max_length=200)
     city = models.ForeignKey('City', on_delete=models.CASCADE)
     country = CountryField()
     email = models.EmailField(max_length=254)
-    telephone = models.IntegerField(null=True, blank=True)
-    date_joined = models.DateField(null=True, blank=True)
+    telephone = models.IntegerField()
+    date_joined = models.DateField()
     date_terminated = models.DateField(null=True, blank=True)
-    is_paid_up = models.BooleanField(null=True, blank=True)
+    is_paid_up = models.BooleanField()
     notes = models.TextField(null=True, blank=True)
+    
 
     class Meta:
         verbose_name = 'MembershipDetail'
@@ -58,11 +59,12 @@ class MembershipType(models.Model):
         return self.name
 
 
-class MemberPaymentHistory(models.Model):   
+class MemberPaymentHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     ref_code = models.CharField(max_length=25)
     amount = models.FloatField()
     description = models.CharField(max_length=50, null=True, blank=True)
+    payment_date = models.DateField( auto_now_add=True)
 
     class Meta:
 
@@ -96,9 +98,10 @@ class Title(models.Model):
 
 
 class Donation(models.Model):
-    payment_mode = models.CharField(max_length=50, choices=DONATION_CHOICES)
+    payment_mode = models.CharField(max_length=50)
     amount = models.FloatField()
-
-    def __str__(self):
-        return self.amount
-    
+    email = models.EmailField(max_length=254)
+    stripe_donation_subscription_id = models.CharField(
+        max_length=20, null=True, blank=True)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='donated_user', null=True, blank=True)

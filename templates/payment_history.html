@@ -19,13 +19,17 @@
 
         </thead>
         <tbody>
-<tr>
 
-    <td class="text-center">Payment Date</td>
-    <td class="text-center">Amount</td>
-    <td class="text-center">Description</td>
-    
-</tr>
+        {% for payment in payments %}
+            
+        <tr>
+            
+            <td class="text-center">{{payment.payment_date}}</td>
+            <td class="text-center">{{payment.amount}}</td>
+            <td class="text-center">{{payment.description}}</td>
+            
+        </tr>
+        {% endfor %}
 
 
 

@@ -12,16 +12,19 @@ class UserProfile(models.Model):
     is_member = models.BooleanField(default=False)
     has_saved_preferences = models.BooleanField(default=False)
     stripe_customer_id = models.CharField(max_length=20, null=True, blank=True)
+    stripe_membership_subscription_id = models.CharField(
+        max_length=20, null=True, blank=True)
+    stripe_donation_subscription_id = models.CharField(
+        max_length=20, null=True, blank=True)
 
     def __str__(self):
         return self.user.username
-    
+
     def create_user_profile(sender, instance, created, **kwargs):
         if created:
             UserProfile.objects.create(user=instance)
-        
-    post_save.connect(create_user_profile,sender=User)
 
+    post_save.connect(create_user_profile, sender=User)
 
 
 class Preference(models.Model):
@@ -38,3 +41,12 @@ class UserPreferences(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class Setting(models.Model):
+    name = models.CharField(max_length=50)
+    value = models.TextField()
+
+
+def __str__(self):
+    return self.name

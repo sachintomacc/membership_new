@@ -1,4 +1,6 @@
 {% extends 'base.html' %} 
+{% load socialaccount %}
+{% providers_media_js %}
 {% load crispy_forms_tags %} 
 {% block title %}Log In{% endblock title %} 
 {% block content %}
@@ -6,9 +8,6 @@
 <div class="row m-3 p-4 d-flex justify-content-center">
     <div class="col-md-6">
         <h2 class="align-self-center">Login</h2>
-
-
-
         <form method="post">
             {% csrf_token %} 
             {{ form|crispy }}
@@ -17,15 +16,14 @@
         </form>
         <br />
         <p><strong>-- OR --</strong></p>
-        Login with: <br />
-        <a href="{% url 'social:begin' 'facebook' %}">Facebook</a>
-        <a href="{% url 'social:begin' 'twitter' %}">Twitter</a>
-        <a href="{% url 'social:begin' 'yahoo' %}">Yahoo</a>
-        
-        <a href="https://api.login.yahoo.com/oauth2/request_auth?client_id=dj0yJmk9WXJYSFBkcUczRmpzJnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTQ0&response_type=code&redirect_uri=https://localhost:8000/&scope=openid&nonce=YihsFwGKgt3KJUh6tPs2">Yahoo OpenID</a>
-        <a href="{% url 'social:begin' 'linkedin-oauth2' %}">LinkedIn</a>
-        <a href="{% url 'social:begin' 'google-oauth2' %}">Google</a>
-        <a href="{% provider_login_url "microsoft" mathod="oauth2" %}">Microsoft</a>
+        Login with: 
+        <br />
+        <a class="mr-4" href="{% url 'social:begin' 'facebook' %}">Facebook</a>
+        <a class="mr-4" href="{% url 'social:begin' 'twitter' %}">Twitter</a>
+        <a class="mr-4" href="{% url 'social:begin' 'linkedin-oauth2' %}">LinkedIn</a>
+        <a class="mr-4" href="{% url 'social:begin' 'google-oauth2' %}">Google</a>
+		<a class="mr-4" href="{% provider_login_url "microsoft" method="oauth2" %}">Microsoft</a>
+       
     </div>
 </div>
 {% endblock %}

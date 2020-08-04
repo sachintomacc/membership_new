@@ -14,14 +14,15 @@ from django.contrib import messages
 @login_required
 def home(request):
 
-    user_profile = UserProfile.objects.get(user=request.user)
-    if user_profile.has_saved_preferences:
+    user_profile,has_created = UserProfile.objects.get_or_create(user=request.user)
+    print('user_profile.has_saved_preferences = ', user_profile.has_saved_preferences)
+    if user_profile.has_saved_preferences :
         response = redirect('dashboard')
     else:
         response = redirect('user_preferences')
 
     return response
-
+   
 
 @login_required
 def dashboard(request):

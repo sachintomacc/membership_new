@@ -1,0 +1,38 @@
+{% extends 'base.html' %} 
+{% block title %} Subscriptions {% endblock title %} 
+
+{% block content %}
+
+<!-- form errors -->
+{% if form.errors %} {% for field in form %} {% for error in field.errors %}
+<div class="alert alert-danger">{{field.name}}<strong> {{ error|escape }}</strong></div>
+{% endfor %} {% endfor %} {% for error in form.non_field_errors %}
+<div class="alert alert-danger">{{field.name}} <strong>{{ error|escape }}</strong></div>
+{% endfor %} {% endif %}
+
+<div class="m-4 p-4">
+    <h3>Your Active Subscriptions</h3>
+   
+    <ul>
+
+
+        
+        {% if user_profile.stripe_membership_subscription_id %}
+            
+        <li>Membership   <span>Cancel</span></li>
+        {% endif %}
+        
+
+        
+        {% if user_profile.stripe_donation_subscription_id %}
+        
+        <li>Donation</li>
+        {% endif %}
+        
+
+
+    </ul>
+
+</div>
+
+{% endblock content %}

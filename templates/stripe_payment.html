@@ -1,16 +1,18 @@
 {% extends 'base.html' %} 
-{% load define_action %}
-{% block content %}
+{% load define_action %} 
 
 
-{% if request.session.payment_type == 'membership' %}
 
-   {% define 'create_membership' as action_url %}
+{% block title %}
+    Payment
+{% endblock title %}
+    
 
-{% else %}
-
-   {% define 'create_donation' as action_url %}
-
+{% block content %} 
+{% if request.session.payment_type == 'membership' %} 
+{% define 'create_membership' as action_url %} 
+{% else %} 
+{% define 'create_donation' as action_url %}
 {% endif %}
 
 <script src="https://js.stripe.com/v3/"></script>
@@ -48,30 +50,37 @@
 <div class="row mt-5 pt-5">
     <div class="col-md-6 offset-md-3">
         <h4 class="text-center">Payment</h4>
-       <h6> session:{{request.session.payment_type}}</h6>
-       <h6> session:{{request.session.MembershipDetails}}</h6>
+        <h6>session:{{request.session.payment_type}}</h6>
+        <h6>user:{{request.user.email}}</h6>
+     
     </div>
 
-{% if request.session.payment_type == 'membership' %}
+    {% if request.session.payment_type == 'membership' %}
 
-<p>this is membership session</p>
-    
-{% endif %}
-    
+    <p>this is membership session</p>
 
-
+    {% endif %}
 </div>
 <div class="row ml-5 mt-2 pt-5 justify-content-center">
     <div class="col-md-6 col-md-offset-6">
-        <form  method="post" id="payment-form" action="{% url action_url %}">
+        <form method="post" id="payment-form" action="{% url action_url %}">
             {% csrf_token %}
             <div class="form-row1">
-                <input type="hidden" value={{payment_type}} name="payment_type" />
-                <input type="text" name="name" placeholder="Name" class="form-control" />
-                <br />
-                <input type="text" name="email" placeholder="Email" class="form-control" />
-
-                <br />
+               
+                <input type="text" name="name" placeholder="Name" class="form-control" 
+                {% if request.user.is_authenticated %} 
+                    value="{{request.user.first_name}} {{request.user.last_name}}" readonly  required
+                {% else%} 
+                    required 
+                {% endif %} />
+                
+            <br />
+            <input type="text" name="email" placeholder="Email" class="form-control" 
+            {% if request.user.is_authenticated %} 
+                    value="{{request.user.email}}" readonly  required
+                {% else%}
+                    required 
+                {% endif %} />
 
                 <label for="card-element">
                     <strong>
