@@ -47,8 +47,8 @@ class MembershipType(models.Model):
     name = models.CharField(max_length=50)
     monthly_price = models.IntegerField()
     yearly_price = models.IntegerField()
-    stripe_monthly_price_id = models.CharField(max_length=50)
-    stripe_yearly_price_id = models.CharField(max_length=50)
+    stripe_monthly_price_id = models.CharField(max_length=50,null=True,blank=True)
+    stripe_yearly_price_id = models.CharField(max_length=50,null=True,blank=True)
 
     class Meta:
 

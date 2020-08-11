@@ -1,6 +1,8 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.shortcuts import render, redirect, reverse
+from stripe.api_resources import subscription
+from stripe.api_resources.billing_portal import session
 from .forms import MembershipDetailForm, DonationForm
 from django.conf import settings
 from .models import *
@@ -14,7 +16,10 @@ import random
 import string
 from core.models import UserProfile, Setting
 from django.db.models import Sum
-
+from membership.decorators import allowed_users
+from django.dispatch import receiver
+from djstripe.signals import WEBHOOK_SIGNALS
+from django.views.decorators.csrf import csrf_exempt,ensure_csrf_cookie
 
 stripe.api_key = settings.STRIPE_KEY
 
@@ -37,10 +42,12 @@ def donation(request):
 
     form = DonationForm()
     donations = Donation.objects.all().count()
-    total_raised = int(Donation.objects.aggregate(Sum('amount')).get('amount__sum'))
-    print('total_raised = ',total_raised)
+    total_raised = int(Donation.objects.aggregate(
+        Sum('amount')).get('amount__sum'))
+    print('total_raised = ', total_raised)
 
-    context = {'form': form, 'donations': donations,'total_raised':total_raised}
+    context = {'form': form, 'donations': donations,
+               'total_raised': total_raised}
 
     return render(request, 'donation.html', context)
 
@@ -60,7 +67,7 @@ def membership(request):
             return render(request, 'membership.html', context)
 
     form_intial_values = {
-        'first_name': request.user.first_name, 'last_name': request.user.last_name,'email':request.user.email}
+        'first_name': request.user.first_name, 'last_name': request.user.last_name, 'email': request.user.email}
     form = MembershipDetailForm(initial=form_intial_values)
     context = {'form': form}
     return render(request, 'membership.html', context)
@@ -131,7 +138,6 @@ def create_donation(request):
         user_profile.stripe_donation_subscription_id = stripe_donation_subscription_id
         user_profile.save()
 
-
     del request.session['DonationDetails']
     del request.session['payment_type']
     request.session.modified = True
@@ -166,9 +172,11 @@ def create_membership(request):
             id=int(request.session['MembershipDetails'].get('city')))
 
     try:
+        # creating a stripe customer
         customer = stripe.Customer.create(
             email=request.session['MembershipDetails'].get('email'), name=f'{request.user.first_name} {request.user.last_name}', source=request.POST['stripeToken'])
 
+        # creating a stripe subscription
         subscription = stripe.Subscription.create(
             customer=customer.id,
             items=[
@@ -176,6 +184,7 @@ def create_membership(request):
             ],
         )
 
+        # creating membership detail record
         user_membership_detail = MembershipDetail.objects.create(user=request.user, membership_type=membership_type, membership_term=request.session['MembershipDetails'].get('membership_term'),
                                                                  title=Title.objects.get(
                                                                      id=int(request.session['MembershipDetails'].get('title'))),
@@ -193,14 +202,22 @@ def create_membership(request):
                                                                  is_paid_up=True
                                                                  )
 
+        # fetching the group to enable Restricted View Feature
+        membership_group = Group.objects.get(name=membership_type.name)
+        # adding the group to the user
+        request.user.groups.add(membership_group)
+
+        # updaing membership related attributes is user profile
         user_profile = UserProfile.objects.get(user=request.user)
         user_profile.stripe_customer_id = customer.id
         user_profile.stripe_membership_subscription_id = subscription.id
         user_profile.is_member = True
         user_profile.save()
 
+        # logging the above payment to membership payment table
         log_to_member_payment_history(request.user, amount, description)
 
+        # clearing the session values
         del request.session['MembershipDetails']
         del request.session['payment_type']
         request.session.modified = True
@@ -208,6 +225,7 @@ def create_membership(request):
         messages.success(request, 'Your membership has been activated !')
         return redirect(reverse('thankyou'))
 
+    # stripe payment exceptions
     except stripe.error.CardError as e:
         messages.error(request, 'CardError')
     except stripe.error.RateLimitError as e:
@@ -224,8 +242,6 @@ def create_membership(request):
         messages.error(request, e)
         redirect('thankyou')
 
-  
-
 
 # function to create records in Member Payment History table
 def log_to_member_payment_history(user, amount, description):
@@ -234,6 +250,8 @@ def log_to_member_payment_history(user, amount, description):
     return
 
 # function to create records in Donation table
+
+
 def log_donations(user, amount, description, payment_mode, email, stripe_donation_subscription_id):
     print('description=', description, 'mode=', payment_mode,)
     Donation.objects.create(
@@ -241,28 +259,93 @@ def log_donations(user, amount, description, payment_mode, email, stripe_donatio
     return
 
 # function to create a unique ref code for each trransaction
+
+
 def create_ref_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
+
 
 # view to display payment history of member
 @login_required
 def payment_history(request):
     payments = MemberPaymentHistory.objects.filter(user=request.user)
-    context = {'payments':payments}
+    context = {'payments': payments}
 
-    return render(request, 'payment_history.html',context)
-
-
+    return render(request, 'payment_history.html', context)
 
 
 # view to display active subscriptions
 @login_required
 def subscriptions(request):
     user_profile = UserProfile.objects.get(user=request.user)
-    context = {'user_profile':user_profile}
+    context = {'user_profile': user_profile}
 
-    return render(request, 'subscriptions.html',context)
+    return render(request, 'subscriptions.html', context)
 
 # view for stripe payment to enter Card details
+
+
 def stripe_payment(request):
     return render(request, 'stripe_payment.html')
+
+
+# method to cancel membership/donation subscription
+def cancel_subscription(request, subscription_type):
+    user_profile = UserProfile.objects.get(user=request.user)
+    print('subscription_type = ', subscription_type)
+
+    if subscription_type == 'membership':
+        subscription_id = user_profile.stripe_membership_subscription_id
+        user_profile.stripe_membership_subscription_id = ''
+    else:
+        subscription_id = user_profile.stripe_donation_subscription_id
+        user_profile.stripe_membership_subscription_id = ''
+
+    stripe.Subscription.delete(subscription_id)
+    user_profile.save()
+
+    messages.info(request, 'Your subscription has been cancelled')
+    return redirect('thankyou')
+
+
+# the view which is accessible only for Gold members
+@login_required
+@allowed_users(allowed_roles=['Gold'])
+def gold_page(request):
+    return render(request, 'gold_page.html')
+
+
+# the view which is accessible only for Silver members
+@login_required
+@allowed_users(allowed_roles=['Silver'])
+def silver_page(request):
+    return render(request, 'silver_page.html')
+
+
+# the view which is accessible only for Bronze members
+@login_required
+@allowed_users(allowed_roles=['Bronze'])
+def bronze_page(request):
+    return render(request, 'bronze_page.html')
+
+# funtion tied to the webhook which notifies when a customer subscription is deleted
+@receiver(WEBHOOK_SIGNALS['customer.subscription.deleted'])
+def subscription_deleted(sender,**kwargs):
+    print('cancelled')
+    
+
+# funtion tied to the webhook which notifies when a customer subscription recurring payment fails
+@receiver(WEBHOOK_SIGNALS['invoice.payment_failed'])
+def subscription_payment_failed(sender,**kwargs):
+    # get the stripe customer id whose subscription failed
+    customer_id = kwargs['event'].data['object']['customer']
+
+    # fetch the user profile of the customer and mark as non-member
+    user_profile = UserProfile.objects.get(stripe_customer_id=customer_id)
+    user_profile.is_member = False
+    user_profile.save()
+    
+    # get the membership detail of the customer and update as membership_terminated_date as today
+    membership_detail = MembershipDetail.objects.get(user=user_profile.user)
+    membership_detail.date_terminated = datetime.date.today()
+    membership_detail.save()

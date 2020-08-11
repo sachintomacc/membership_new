@@ -27,9 +27,9 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.herokuapp.com', '127.0.0.1', 'localhost', '.example.com']
+ALLOWED_HOSTS = ['.herokuapp.com', '127.0.0.1', 'localhost', '.example.com','bc81a8550254.ngrok.io']
 
-CORS_ORIGIN_WHITELIST = ('https://example.com', )
+CORS_ORIGIN_WHITELIST = ('https://example.com', 'https://bc81a8550254.ngrok.io',)
 # Application definition
 
 INSTALLED_APPS = [
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django_shortcuts',
     'django_countries',
     'stripe',
+    'djstripe',
     'corsheaders',
     'crispy_forms',
     'social_django',
@@ -206,6 +207,13 @@ SOCIAL_AUTH_LINKEDIN_OAUTH2_EXTRA_DATA = [
 ]
 FIELD_SELECTORS = ['email-address', ]
 
+LINKEDIN_SCOPE = ['r_basicprofile', 'r_emailaddress','r_fullprofile']
+
+LINKEDIN_EXTRA_FIELD_SELECTORS = ['email-address','positions', 'headline','summary','picture-url','site-standard-profile-request','public-profile-url','location','interests','skills','languages',]
+
+LINKEDIN_EXTRA_DATA = [('id', 'id'), ('first-name', 'first_name'), ('last-name', 'last_name'), ('email-address', 'email_address'), ('positions', 'positions'), ('summary', 'summary'), ('headline', 'headline'), ('picture-url', 'picture_url'),
+ ('site-standard-profile-request', 'site_standard_profile_request'), ('public-profile-url', 'public_profile_url'), ('location', 'location'), ('interests', 'interests'), ('skills', 'skills'), ('languages', 'languages'),]
+
 # instagram
 SOCIAL_AUTH_INSTAGRAM_KEY = config('SOCIAL_AUTH_INSTAGRAM_KEY')
 SOCIAL_AUTH_INSTAGRAM_SECRET = config('SOCIAL_AUTH_INSTAGRAM_SECRET')
@@ -241,4 +249,15 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+
+
+STRIPE_LIVE_PUBLIC_KEY = ''
+STRIPE_LIVE_SECRET_KEY = ''
+STRIPE_TEST_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY')
+STRIPE_TEST_SECRET_KEY = config('STRIPE_KEY')
+STRIPE_LIVE_MODE = False  # Change to True in production
+# Get it from the section in the Stripe dashboard where you added the webhook endpoint
+DJSTRIPE_WEBHOOK_SECRET = config('DJSTRIPE_WEBHOOK_SECRET')
+
 

@@ -3,6 +3,15 @@ from django.shortcuts import redirect
 
 
 
+
+
+
+
+
+
+
+# decorator to restrict users to certain views based on their roles
+
 def allowed_users(allowed_roles=[]):
     def decorator(view_func):
         def wrapper_func(request,*args, **kwargs):
@@ -14,6 +23,6 @@ def allowed_users(allowed_roles=[]):
             if group in allowed_roles:
                 return view_func(request,*args, **kwargs)
             else:
-                return HttpResponse("not allowed")
+                return HttpResponse("You are not allowed to view this page")
         return wrapper_func
     return decorator
