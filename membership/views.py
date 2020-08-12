@@ -20,7 +20,7 @@ from membership.decorators import allowed_users
 from django.dispatch import receiver
 from djstripe.signals import WEBHOOK_SIGNALS
 from django.views.decorators.csrf import csrf_exempt,ensure_csrf_cookie
-
+from django.http import JsonResponse
 stripe.api_key = settings.STRIPE_KEY
 
 
@@ -147,29 +147,35 @@ def create_donation(request):
 
 def create_membership(request):
 
-    # fetching the memebership type
-    membership_type = MembershipType.objects.get(
-        id=int(request.session['MembershipDetails'].get('membership_type')))
+    try:
+        # fetching the memebership type
+        membership_type = MembershipType.objects.get(
+            id=int(request.session['MembershipDetails'].get('membership_type')))
 
-    # fetching memebership term and corresponding details
-    if request.session['MembershipDetails'].get('membership_term') == 'M':
-        price_id = membership_type.stripe_monthly_price_id
-        amount = membership_type.monthly_price
-        description = membership_type.name + ' Monthly Plan Payment'
+        # fetching memebership term and corresponding details
+        if request.session['MembershipDetails'].get('membership_term') == 'M':
+            price_id = membership_type.stripe_monthly_price_id
+            amount = membership_type.monthly_price
+            description = membership_type.name + ' Monthly Plan Payment'
 
-    elif request.session['MembershipDetails'].get('membership_term') == 'Y':
-        price_id = membership_type.stripe_yearly_price_id
-        amount = membership_type.yearly_price
-        description = membership_type.name + ' Yearly Plan Payment'
+        elif request.session['MembershipDetails'].get('membership_term') == 'Y':
+            price_id = membership_type.stripe_yearly_price_id
+            amount = membership_type.yearly_price
+            description = membership_type.name + ' Yearly Plan Payment'
+        
+        country = Country.objects.get(id=int(request.session['MembershipDetails'].get('country')))
 
-    # creating a new city and adding it to MembershipDetail if user enters a custom city name
-    if request.session['MembershipDetails'].get('city_name') != '':
-        new_city = City.objects.create(
-            name=request.session['MembershipDetails'].get('city_name'))
-        user_city = new_city
-    else:
-        user_city = City.objects.get(
-            id=int(request.session['MembershipDetails'].get('city')))
+        # creating a new city and adding it to MembershipDetail if user enters a custom city name
+        if request.session['MembershipDetails'].get('city_name') != '':
+            new_city = City.objects.create(
+                name=request.session['MembershipDetails'].get('city_name'),country=country)
+            user_city = new_city
+
+        else:
+            user_city = City.objects.get(
+                id=int(request.session['MembershipDetails'].get('city')))
+    except Exception as e:
+        print(e)
 
     try:
         # creating a stripe customer
@@ -193,8 +199,7 @@ def create_membership(request):
                                                                  city=user_city,
                                                                  address=request.session['MembershipDetails'].get(
                                                                      'address'),
-                                                                 country=request.session['MembershipDetails'].get(
-                                                                     'country'),
+                                                                 country=country,
                                                                  email=request.user.email,
                                                                  telephone=request.session['MembershipDetails'].get(
                                                                      'telephone'),
@@ -349,3 +354,20 @@ def subscription_payment_failed(sender,**kwargs):
     membership_detail = MembershipDetail.objects.get(user=user_profile.user)
     membership_detail.date_terminated = datetime.date.today()
     membership_detail.save()
+
+
+
+def load_cities(request):
+    print(request.GET)
+    country_id = request.GET.get('country_id')
+    cities = City.objects.filter(country__id=country_id)
+    print(cities)
+    print(list(cities.values('id','name')))
+    return JsonResponse( list(cities.values('id','name')),safe=False)
+
+
+
+
+
+
+

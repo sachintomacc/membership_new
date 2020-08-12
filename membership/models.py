@@ -25,15 +25,14 @@ class MembershipDetail(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     address = models.CharField(max_length=200)
-    city = models.ForeignKey('City', on_delete=models.CASCADE)
-    country = CountryField()
+    city = models.ForeignKey('City', on_delete=models.SET_NULL ,null=True,blank=True)
+    country = models.ForeignKey( 'Country' , on_delete=models.SET_NULL ,null=True,blank=True)
     email = models.EmailField(max_length=254)
     telephone = models.IntegerField()
     date_joined = models.DateField()
     date_terminated = models.DateField(null=True, blank=True)
     is_paid_up = models.BooleanField()
     notes = models.TextField(null=True, blank=True)
-    
 
     class Meta:
         verbose_name = 'MembershipDetail'
@@ -47,8 +46,10 @@ class MembershipType(models.Model):
     name = models.CharField(max_length=50)
     monthly_price = models.IntegerField()
     yearly_price = models.IntegerField()
-    stripe_monthly_price_id = models.CharField(max_length=50,null=True,blank=True)
-    stripe_yearly_price_id = models.CharField(max_length=50,null=True,blank=True)
+    stripe_monthly_price_id = models.CharField(
+        max_length=50, null=True, blank=True)
+    stripe_yearly_price_id = models.CharField(
+        max_length=50, null=True, blank=True)
 
     class Meta:
 
@@ -64,7 +65,7 @@ class MemberPaymentHistory(models.Model):
     ref_code = models.CharField(max_length=25)
     amount = models.FloatField()
     description = models.CharField(max_length=50, null=True, blank=True)
-    payment_date = models.DateField( auto_now_add=True)
+    payment_date = models.DateField(auto_now_add=True)
 
     class Meta:
 
@@ -75,12 +76,16 @@ class MemberPaymentHistory(models.Model):
         return self.user.username
 
 
-class City(models.Model):
+class Country(models.Model):
     name = models.CharField(max_length=50)
 
-    class Meta:
-        verbose_name = 'City'
-        verbose_name_plural = 'Cities'
+    def __str__(self):
+        return self.name
+
+
+class City(models.Model):
+    name = models.CharField(max_length=50)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name

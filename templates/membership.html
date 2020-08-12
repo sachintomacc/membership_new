@@ -10,7 +10,7 @@
 <div class="m-4 p-4">
     <h3>Membership</h3>
     <br />
-    <form method="post">
+    <form id="membership_form" method="post" data-cities-url="{% url 'ajax_load_cities' %}">
         {% csrf_token %}
 
         <div class="row">
@@ -28,13 +28,13 @@
                         <span class="badge badge-primary">
                             Monthly
                         </span>
-                        <span>{{ model_instance.monthly_price }}</span>
+                        <span>${{ model_instance.monthly_price }}</span>
                         &nbsp;&nbsp;&nbsp;&nbsp;
                         <span class="badge badge-primary">
                             Yearly
                         </span>
 
-                        <span>{{ model_instance.yearly_price }}</span>
+                        <span>${{ model_instance.yearly_price }}</span>
                     </ul>
                     <br />
                     {% endfor %}
@@ -62,13 +62,43 @@
         <div class="row"></div>
 
         <div class="row">
+            <div class="col-md-4">{{form.country|as_crispy_field}}</div>
             <div class="col-md-4">{{form.city|as_crispy_field}}</div>
             <div class="col-md-4">{{form.city_name|as_crispy_field}}</div>
-            <div class="col-md-4">{{form.country|as_crispy_field}}</div>
         </div>
         <br />
         <input class="btn btn-primary float-right" type="submit" value="Proceed to Payment" />
     </form>
 </div>
 
-{% endblock content %}
+{% endblock content %} {% block extra_scripts %}
+<script>
+    $(function () {
+        $("#id_country").change(function () {
+            const url = $("#membership_form").attr("data-cities-url");
+            const country_id = $(this).val();
+            console.log("country_id=", country_id);
+
+            $.ajax({
+                url: url,
+                data: { country_id: country_id },
+                success: function (data) {
+                    let option_list = "";
+
+                    console.log(data);
+
+                    data.forEach(function (arrayItem) {
+                        option_item = '<option value="' + arrayItem.id + '">' + arrayItem.name + "</option>";
+                        console.log(option_item);
+                        option_list += option_item;
+                    });
+
+                    console.log("option_list = ", option_list);
+                    $('#id_city').html(option_list);
+                },
+            });
+        });
+    });
+</script>
+
+{% endblock extra_scripts %}

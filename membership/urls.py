@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from .views import (create_membership, membership, stripe_payment, cancel_subscription,
-                    create_donation, donation, payment_history, subscriptions, gold_page,
+                    create_donation, donation, payment_history, subscriptions, gold_page,load_cities,
                     silver_page,
                     bronze_page)
 from django.contrib.auth import views as auth_views
@@ -21,4 +21,5 @@ urlpatterns = [
     path('silver_page/', silver_page, name='silver_page'),
     path('bronze_page/', bronze_page, name='bronze_page'),
     path('stripe/',include('djstripe.urls')),
+    path('ajax_load_cities/' , load_cities , name='ajax_load_cities'),
 ]
