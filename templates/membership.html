@@ -1,4 +1,8 @@
-{% extends 'base.html' %} {% load crispy_forms_tags %} {% block title %} Membership {% endblock title %} {% block content %}
+{% extends 'base.html' %} 
+{% load crispy_forms_tags %} 
+{% load define_action %} 
+
+{% block title %} Membership {% endblock title %} {% block content %}
 
 <!-- form errors -->
 {% if form.errors %} {% for field in form %} {% for error in field.errors %}
@@ -28,13 +32,14 @@
                         <span class="badge badge-primary">
                             Monthly
                         </span>
-                        <span>${{ model_instance.monthly_price }}</span>
+                        <span>${{ model_instance.stripe_monthly_price_id|get_stripe_price_details }}</span>
                         &nbsp;&nbsp;&nbsp;&nbsp;
                         <span class="badge badge-primary">
                             Yearly
                         </span>
 
-                        <span>${{ model_instance.yearly_price }}</span>
+                        <span>${{ model_instance.stripe_yearly_price_id|get_stripe_price_details }}</span>
+                        
                     </ul>
                     <br />
                     {% endfor %}

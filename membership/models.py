@@ -25,8 +25,10 @@ class MembershipDetail(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     address = models.CharField(max_length=200)
-    city = models.ForeignKey('City', on_delete=models.SET_NULL ,null=True,blank=True)
-    country = models.ForeignKey( 'Country' , on_delete=models.SET_NULL ,null=True,blank=True)
+    city = models.ForeignKey(
+        'City', on_delete=models.SET_NULL, null=True, blank=True)
+    country = models.ForeignKey(
+        'Country', on_delete=models.SET_NULL, null=True, blank=True)
     email = models.EmailField(max_length=254)
     telephone = models.IntegerField()
     date_joined = models.DateField()
@@ -44,8 +46,6 @@ class MembershipDetail(models.Model):
 
 class MembershipType(models.Model):
     name = models.CharField(max_length=50)
-    monthly_price = models.IntegerField()
-    yearly_price = models.IntegerField()
     stripe_monthly_price_id = models.CharField(
         max_length=50, null=True, blank=True)
     stripe_yearly_price_id = models.CharField(
