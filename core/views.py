@@ -18,8 +18,6 @@ def home(request):
 
     user_profile, has_created = UserProfile.objects.get_or_create(
         user=request.user)
-    print('user_profile.has_saved_preferences = ',
-          user_profile.has_saved_preferences)
     if user_profile.has_saved_preferences:
         response = redirect('dashboard')
     else:

@@ -363,7 +363,7 @@ def subscription_payment_failed(sender,**kwargs):
 	membership_detail.save()
 
 
-
+# load City names on select on Country in Membership Form
 def load_cities(request):
 	country_id = request.GET.get('country_id')
 	cities = City.objects.filter(country__id=country_id)
