@@ -147,6 +147,8 @@ def create_donation(request):
 
 def create_membership(request):
 
+	print('POST = ', request.POST)
+
 	try:
 		# fetching the memebership type
 		membership_type = MembershipType.objects.get(
