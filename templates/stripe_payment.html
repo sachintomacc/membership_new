@@ -149,6 +149,11 @@ Payment
 			{% csrf_token %}
 			<div class="form-row1">
 
+					
+					{% if not request.session.DonationDetails.is_anonymous  %}
+						
+						
+
 				<input type="text" name="name" placeholder="Name" class="form-control"
 					{% if request.user.is_authenticated %}
 					value="{{request.user.first_name}} {{request.user.last_name}}" readonly required {% else%} required
@@ -160,6 +165,9 @@ Payment
 					required {% endif %} />
 				<br>
 				<br>
+
+				{% endif %}
+
 				<label for="card-element">
 					<strong>
 						Credit or Debit Card
