@@ -15,7 +15,7 @@ DONATION_CHOICES = (
 
 
 class MembershipDetail(models.Model):
-	user = models.OneToOneField(
+	user = models.ForeignKey(
 		User, on_delete=models.CASCADE, related_name='member', null=True, blank=True)
 	membership_type = models.ForeignKey(
 		'MembershipType', on_delete=models.CASCADE)

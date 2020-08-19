@@ -7,7 +7,7 @@
 
     <br />
     <ul>
-        {% if user_profile.stripe_membership_subscription_id %}
+        {% if user_profile.stripe_membership_subscription_id  %}
 
         <li>
             Membership <span><a href="{% url 'cancel_subscription' 'membership' %}">Cancel</a> </span>
@@ -21,7 +21,7 @@
 
         <br />
 
-        {% if user_profile.stripe_donation_subscription_id %}
+        {% if user_profile.stripe_donation_subscription_id  %}
 
         <li>
             Donation <span><a href="{% url 'cancel_subscription' 'donation' %}">Cancel</a> </span>
