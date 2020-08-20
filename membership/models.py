@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django_countries.fields import CountryField
+from stripe.api_resources.issuing import transaction
 
 User = get_user_model()
 TERM_CHOICES = (
@@ -103,7 +104,7 @@ class Title(models.Model):
 
 
 class Donation(models.Model):
-	payment_mode = models.CharField(max_length=50)
+	payment_mode = models.CharField(max_length=50,choices=DONATION_CHOICES)
 	amount = models.FloatField()
 	donor_name = models.CharField(max_length=50, null=True, blank=True)
 	donor_email = models.EmailField(max_length=254,null=True,blank=True)
@@ -112,4 +113,5 @@ class Donation(models.Model):
 	user = models.ForeignKey(
 		User, on_delete=models.CASCADE, related_name='donated_user', null=True, blank=True)
 	is_anonymous = models.BooleanField(default=False)
+	transaction_date = models.DateField( auto_now_add=True)
 	

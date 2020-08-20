@@ -12,13 +12,20 @@ PAYMENT_MODE_CHOICES = (
 
 class DonationForm(forms.ModelForm):
     payment_mode = forms.ChoiceField(
-        choices=PAYMENT_MODE_CHOICES, widget=forms.RadioSelect,required=True)
+        choices=PAYMENT_MODE_CHOICES, widget=forms.RadioSelect())
     is_anonymous = forms.BooleanField(
         label="Donate anonymously", required=False)
 
     class Meta:
         model = Donation
         fields = ["is_anonymous", "payment_mode", "amount"]
+
+def __init__(self, *args, **kwargs):
+	super().__init__(*args, **kwargs)
+	self.fields['payment_mode'].required = True
+
+	
+
 
 
 class MembershipDetailForm(forms.ModelForm):
