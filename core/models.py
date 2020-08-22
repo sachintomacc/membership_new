@@ -12,8 +12,7 @@ class UserProfile(models.Model):
     is_member = models.BooleanField(default=False)
     has_saved_preferences = models.BooleanField(default=False)
     stripe_customer_id = models.CharField(max_length=20, null=True, blank=True)
-    stripe_membership_subscription_id = models.CharField(
-        max_length=20, null=True, blank=True)
+   
 
     def __str__(self):
         return self.user.username

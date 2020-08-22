@@ -1,71 +1,81 @@
-{% extends 'base.html' %} 
-{% load define_action %} 
+{% extends 'base.html' %}
+{% load define_action %}
 
-{% block title %} Subscriptions {% endblock title %} 
+{% block title %} Subscriptions {% endblock title %}
 
 {% block content %}
 
 <div class="m-4 p-4">
-    <h3>Your Active Subscriptions</h3>
+	<h3>Your Active Subscriptions</h3>
 
 	<br />
-	
-
-
 
 	<h5>
-	Membership
+		Membership
 
 	</h5>
 
 
-    <ul>
-        {% if user_profile.stripe_membership_subscription_id  %}
+	<ul>
 
-        <li>
-		 <span>{{membership_detail.membership_type.name}} Membership</span>&nbsp;
-		 (<span>${{ stripe_price_id|get_stripe_price_details }}/</span><span>{% if membership_detail.membership_term == 'M' %}month{%else%}year{% endif %}</span>)&nbsp;
-		 <span><a href="{% url 'cancel_subscription' 'membership' stripe_price_id %}">Cancel</a></span>
-        </li>
+		{% for membership in  membership_details  %}
 
-        {% else %}
+		<li>{{membership.membership_type.name}} membership
 
-        <li class="text-muted">You dont have any active membership subscription</li>
+			{% if membership_detail.membership_term == 'M' %}
+			(${{ membership.membership_type.stripe_monthly_price_id|get_stripe_price_details }}/month)
 
-        {% endif %}
+			{% else %}
+			(${{ membership.membership_type.stripe_yearly_price_id|get_stripe_price_details }}/year)
 
-        <br />
+			{% endif %}
+			&nbsp;<span><a
+					href="{% url 'cancel_subscription' 'membership' membership.stripe_membership_subscription_id %}">Cancel</a></span>
 
-    </ul>
+		</li>
+
+		{%empty%}
+
+		<li class="text-muted">You dont have any active membership subscription</li>
+
+		{% endfor %}
+
+
+
+		<br />
+
+	</ul>
 
 	<h5>
 		Donation
-	
-		</h5>
-	
-<ul>
 
-	
-	{% for subscription in user_subscriptions %}
-		
-	<li>
+	</h5>
 
-		<span>
-			${{subscription.stripe_donation_subscription_id|get_stripe_subscription_amount}}/{{subscription.stripe_donation_subscription_id|get_stripe_subscription_interval}}
-		</span>&nbsp;
-		<span><a href="{% url 'cancel_subscription' 'donation' subscription.stripe_donation_subscription_id %}">Cancel</a> </span>
-		
-		{%empty%}
-		
-		<span class="text-muted">You dont have any donations subscriptions</span>
-		
-		{% endfor %}
-	</li>
-			
-		
+	<ul>
+
+
+		{% for subscription in user_subscriptions %}
+
+		<li>
+
+			<span>
+				${{subscription.stripe_donation_subscription_id|get_stripe_subscription_amount}}/{{subscription.stripe_donation_subscription_id|get_stripe_subscription_interval}}
+			</span>&nbsp;
+			<span><a
+					href="{% url 'cancel_subscription' 'donation' subscription.stripe_donation_subscription_id %}">Cancel</a>
+			</span>
+
+			{%empty%}
+
+			<span class="text-muted">You dont have any donations subscriptions</span>
+
+			{% endfor %}
+		</li>
+
+
 
 	</ul>
-		
+
 </div>
 
 {% endblock content %}

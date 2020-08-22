@@ -60,27 +60,22 @@ def donation(request):
 @login_required
 def membership(request):
 
-	try:
-		membership_detail = MembershipDetail.objects.get(user=request.user,date_terminated=None)
-		messages.warning(request,f'You already have an active {membership_detail.membership_type.name} subscription. Cancel the membership and proceed.')
-		return redirect('dashboard')
-	except ObjectDoesNotExist:	
-		if request.method == 'POST':
-			form = MembershipDetailForm(request.POST)
-			if form.is_valid():
-				request.session['MembershipDetails'] = request.POST
-				request.session['payment_type'] = 'membership'
-				return redirect('stripe_payment')
-			else:
-				print('invalid')
-				context = {'form': form}
-				return render(request, 'membership.html', context)
+	if request.method == 'POST':
+		form = MembershipDetailForm(request.POST)
+		if form.is_valid():
+			request.session['MembershipDetails'] = request.POST
+			request.session['payment_type'] = 'membership'
+			return redirect('stripe_payment')
+		else:
+			print('invalid')
+			context = {'form': form}
+			return render(request, 'membership.html', context)
 
-		form_intial_values = {
-			'first_name': request.user.first_name, 'last_name': request.user.last_name, 'email': request.user.email}
-		form = MembershipDetailForm(initial=form_intial_values)
-		context = {'form': form}
-		return render(request, 'membership.html', context)
+	form_intial_values = {
+		'first_name': request.user.first_name, 'last_name': request.user.last_name, 'email': request.user.email}
+	form = MembershipDetailForm(initial=form_intial_values)
+	context = {'form': form}
+	return render(request, 'membership.html', context)
 
 
 def create_donation(request):
@@ -235,7 +230,8 @@ def create_membership(request):
 			telephone=request.session['MembershipDetails'].get(
 			'telephone'),
 			date_joined=datetime.date.today(),
-			is_paid_up=True
+			is_paid_up=True,
+			stripe_membership_subscription_id=subscription.id
 		)
 
 		# fetching the group to enable Restricted View Feature
@@ -320,22 +316,13 @@ def payment_history(request):
 @login_required
 def subscriptions(request):
 	user_profile = UserProfile.objects.get(user=request.user)
-
-	try:
-		membership_detail = MembershipDetail.objects.get(
-			user=request.user, date_terminated=None)
-		stripe_price_id = membership_detail.membership_type.stripe_monthly_price_id if membership_detail.membership_term == 'M' else membership_detail.membership_type.stripe_yearly_price_id
-	except ObjectDoesNotExist:
-		membership_detail = None
-		stripe_price_id = None
-
+	membership_details = MembershipDetail.objects.filter(user=request.user, date_terminated=None)
 	user_subscriptions = UserDonationSubscriptions.objects.filter(user=request.user,is_terminated=False)
 
 
-	print('stripe_price_id=', stripe_price_id)
 
 	context = {'user_profile': user_profile,
-			   'membership_detail': membership_detail, 'stripe_price_id': stripe_price_id,'user_subscriptions':user_subscriptions}
+			   'membership_details': membership_details, 'user_subscriptions':user_subscriptions}
 
 	return render(request, 'subscriptions.html', context)
 
@@ -354,15 +341,13 @@ def cancel_subscription(request, subscription_type,stripe_subscription_id):
 	user_profile = UserProfile.objects.get(user=request.user)
 
 	if subscription_type == 'membership':
-		subscription_id = user_profile.stripe_membership_subscription_id
-		user_profile.stripe_membership_subscription_id = ''
+		subscription_id = stripe_subscription_id
 		# fetch the user profile of the customer and mark as non-member
 		user_profile.is_member = False
 		user_profile.save()
 
 		# get the membership detail of the customer and update as membership_terminated_date as today
-		membership_detail = MembershipDetail.objects.get(
-			user=request.user, date_terminated=None)
+		membership_detail = MembershipDetail.objects.get(user=request.user, date_terminated=None,stripe_membership_subscription_id=subscription_id)
 
 		# setting date terminated
 		if membership_detail.membership_term == 'M':
