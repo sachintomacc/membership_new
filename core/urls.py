@@ -8,6 +8,7 @@ urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
     path('user_preferences/', user_preferences, name='user_preferences'),
     path('thankyou/', thankyou, name='thankyou'),
+    path('page_not_found/', page_not_found, name='page_not_found'),
     path('error/', error, name='error'),
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

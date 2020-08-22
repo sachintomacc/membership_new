@@ -15,7 +15,7 @@ urlpatterns = [
     path('create_donation/', create_donation, name='create_donation'),
     path('payment_history/', payment_history, name='payment_history'),
     path('subscriptions/', subscriptions, name='subscriptions'),
-    path('cancel_subscription/<str:subscription_type>/',
+    path('cancel_subscription/<str:subscription_type>/<str:stripe_subscription_id>/',
          cancel_subscription, name='cancel_subscription'),
     path('gold_page/', gold_page, name='gold_page'),
     path('silver_page/', silver_page, name='silver_page'),

@@ -19,7 +19,7 @@ import datetime
 import random
 import string
 from django.core.exceptions import ObjectDoesNotExist
-from core.models import UserProfile, Setting
+from core.models import UserProfile, Setting,UserDonationSubscriptions
 from django.db.models import Sum
 from membership.decorators import allowed_users
 from django.dispatch import receiver
@@ -60,22 +60,27 @@ def donation(request):
 @login_required
 def membership(request):
 
-	if request.method == 'POST':
-		form = MembershipDetailForm(request.POST)
-		if form.is_valid():
-			request.session['MembershipDetails'] = request.POST
-			request.session['payment_type'] = 'membership'
-			return redirect('stripe_payment')
-		else:
-			print('invalid')
-			context = {'form': form}
-			return render(request, 'membership.html', context)
+	try:
+		membership_detail = MembershipDetail.objects.get(user=request.user,date_terminated=None)
+		messages.warning(request,f'You already have an active {membership_detail.membership_type.name} subscription. Cancel the membership and proceed.')
+		return redirect('dashboard')
+	except ObjectDoesNotExist:	
+		if request.method == 'POST':
+			form = MembershipDetailForm(request.POST)
+			if form.is_valid():
+				request.session['MembershipDetails'] = request.POST
+				request.session['payment_type'] = 'membership'
+				return redirect('stripe_payment')
+			else:
+				print('invalid')
+				context = {'form': form}
+				return render(request, 'membership.html', context)
 
-	form_intial_values = {
-		'first_name': request.user.first_name, 'last_name': request.user.last_name, 'email': request.user.email}
-	form = MembershipDetailForm(initial=form_intial_values)
-	context = {'form': form}
-	return render(request, 'membership.html', context)
+		form_intial_values = {
+			'first_name': request.user.first_name, 'last_name': request.user.last_name, 'email': request.user.email}
+		form = MembershipDetailForm(initial=form_intial_values)
+		context = {'form': form}
+		return render(request, 'membership.html', context)
 
 
 def create_donation(request):
@@ -122,6 +127,7 @@ def create_donation(request):
 				customer=stripe_customer_id
 			)
 			stripe_donation_subscription_id = None
+
 		else:
 			description = 'Monthly donation'
 			stripe_donation_product_id = get_setting(
@@ -151,6 +157,9 @@ def create_donation(request):
 			log_to_member_payment_history(user, amount, description)
 			user_profile.stripe_donation_subscription_id = stripe_donation_subscription_id
 			user_profile.save()
+
+			UserDonationSubscriptions.objects.create(user=request.user,stripe_donation_subscription_id=stripe_donation_subscription_id)
+
 
 		del request.session['DonationDetails']
 		del request.session['payment_type']
@@ -311,7 +320,22 @@ def payment_history(request):
 @login_required
 def subscriptions(request):
 	user_profile = UserProfile.objects.get(user=request.user)
-	context = {'user_profile': user_profile}
+
+	try:
+		membership_detail = MembershipDetail.objects.get(
+			user=request.user, date_terminated=None)
+		stripe_price_id = membership_detail.membership_type.stripe_monthly_price_id if membership_detail.membership_term == 'M' else membership_detail.membership_type.stripe_yearly_price_id
+	except ObjectDoesNotExist:
+		membership_detail = None
+		stripe_price_id = None
+
+	user_subscriptions = UserDonationSubscriptions.objects.filter(user=request.user,is_terminated=False)
+
+
+	print('stripe_price_id=', stripe_price_id)
+
+	context = {'user_profile': user_profile,
+			   'membership_detail': membership_detail, 'stripe_price_id': stripe_price_id,'user_subscriptions':user_subscriptions}
 
 	return render(request, 'subscriptions.html', context)
 
@@ -322,11 +346,11 @@ def stripe_payment(request):
 	if request.session.get('MembershipDetails') or request.session.get('DonationDetails'):
 		return render(request, 'stripe_payment.html')
 	else:
-		raise Http404
+		return redirect('page_not_found')
 
 
 # method to cancel membership/donation subscription
-def cancel_subscription(request, subscription_type):
+def cancel_subscription(request, subscription_type,stripe_subscription_id):
 	user_profile = UserProfile.objects.get(user=request.user)
 
 	if subscription_type == 'membership':
@@ -337,14 +361,17 @@ def cancel_subscription(request, subscription_type):
 		user_profile.save()
 
 		# get the membership detail of the customer and update as membership_terminated_date as today
-		membership_detail = MembershipDetail.objects.get(user=request.user, date_terminated=None)
-		
+		membership_detail = MembershipDetail.objects.get(
+			user=request.user, date_terminated=None)
+
 		# setting date terminated
 		if membership_detail.membership_term == 'M':
-			membership_detail.date_terminated = last_day_of_month(datetime.date.today())
+			membership_detail.date_terminated = last_day_of_month(
+				datetime.date.today())
 		else:
-			membership_detail.date_terminated = last_day_of_year(datetime.date.today())
-		
+			membership_detail.date_terminated = last_day_of_year(
+				datetime.date.today())
+
 		membership_type = membership_detail.membership_type
 		# fetching the group to disable Restricted View Feature
 		membership_group = Group.objects.get(name=membership_type.name)
@@ -353,9 +380,18 @@ def cancel_subscription(request, subscription_type):
 		membership_detail.save()
 
 	else:
-		subscription_id = user_profile.stripe_donation_subscription_id
-		user_profile.stripe_membership_subscription_id = ''
-		user_profile.save()
+		subscription_id = stripe_subscription_id
+		
+		user_donation_subscription = UserDonationSubscriptions.objects.get(user=request.user,stripe_donation_subscription_id=subscription_id)
+		user_donation_subscription.is_terminated = True
+		user_donation_subscription.date_terminated = datetime.date.today()
+		user_donation_subscription.save()
+		
+		donation = Donation.objects.get(
+			stripe_donation_subscription_id=subscription_id)
+		# setting date terminated
+		donation.date_terminated = datetime.date.today()
+		donation.save()
 
 	stripe.Subscription.delete(subscription_id)
 	messages.info(request, 'Your subscription has been cancelled')

@@ -59,6 +59,9 @@ def user_preferences(request):
 def thankyou(request):
     return render(request, 'thankyou.html')
 
+def page_not_found(request):
+    return render(request, 'pagenotfound.html')
+
 
 def error(request):
     return render(request, 'error.html')

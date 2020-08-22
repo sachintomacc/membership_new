@@ -14,8 +14,6 @@ class UserProfile(models.Model):
     stripe_customer_id = models.CharField(max_length=20, null=True, blank=True)
     stripe_membership_subscription_id = models.CharField(
         max_length=20, null=True, blank=True)
-    stripe_donation_subscription_id = models.CharField(
-        max_length=20, null=True, blank=True)
 
     def __str__(self):
         return self.user.username
@@ -50,3 +48,10 @@ class Setting(models.Model):
 
 def __str__(self):
     return self.name
+
+
+class UserDonationSubscriptions(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    stripe_donation_subscription_id = models.CharField(max_length=50)
+    is_terminated = models.BooleanField(default=False)
+    date_terminated = models.DateField(null=True, blank=True)

@@ -1,38 +1,71 @@
-{% extends 'base.html' %} {% block title %} Subscriptions {% endblock title %} 
+{% extends 'base.html' %} 
+{% load define_action %} 
+
+{% block title %} Subscriptions {% endblock title %} 
 
 {% block content %}
 
 <div class="m-4 p-4">
     <h3>Your Active Subscriptions</h3>
 
-    <br />
+	<br />
+	
+
+
+
+	<h5>
+	Membership
+
+	</h5>
+
+
     <ul>
         {% if user_profile.stripe_membership_subscription_id  %}
 
         <li>
-            Membership <span><a href="{% url 'cancel_subscription' 'membership' %}">Cancel</a> </span>
+		 <span>{{membership_detail.membership_type.name}} Membership</span>&nbsp;
+		 (<span>${{ stripe_price_id|get_stripe_price_details }}/</span><span>{% if membership_detail.membership_term == 'M' %}month{%else%}year{% endif %}</span>)&nbsp;
+		 <span><a href="{% url 'cancel_subscription' 'membership' stripe_price_id %}">Cancel</a></span>
         </li>
 
         {% else %}
 
-        <li>You dont have any Membership subscriptions</li>
+        <li class="text-muted">You dont have any active membership subscription</li>
 
         {% endif %}
 
         <br />
 
-        {% if user_profile.stripe_donation_subscription_id  %}
-
-        <li>
-            Donation <span><a href="{% url 'cancel_subscription' 'donation' %}">Cancel</a> </span>
-        </li>
-
-        {% else %}
-
-        <li>You dont have any Donations subscriptions</li>
-
-        {% endif %}
     </ul>
+
+	<h5>
+		Donation
+	
+		</h5>
+	
+<ul>
+
+	
+	{% for subscription in user_subscriptions %}
+		
+	<li>
+
+		<span>
+			${{subscription.stripe_donation_subscription_id|get_stripe_subscription_amount}}/{{subscription.stripe_donation_subscription_id|get_stripe_subscription_interval}}
+		</span>&nbsp;
+		<span><a href="{% url 'cancel_subscription' 'donation' subscription.stripe_donation_subscription_id %}">Cancel</a> </span>
+		
+		{%empty%}
+		
+		<span class="text-muted">You dont have any donations subscriptions</span>
+		
+		{% endfor %}
+	</li>
+			
+		
+
+	</ul>
+		
 </div>
 
 {% endblock content %}
