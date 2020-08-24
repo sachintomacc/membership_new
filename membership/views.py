@@ -153,7 +153,8 @@ def create_donation(request):
 			user_profile.stripe_donation_subscription_id = stripe_donation_subscription_id
 			user_profile.save()
 
-			UserDonationSubscriptions.objects.create(user=request.user,stripe_donation_subscription_id=stripe_donation_subscription_id)
+			if request.session['DonationDetails'].get('payment_mode') == 'M':
+				UserDonationSubscriptions.objects.create(user=request.user,stripe_donation_subscription_id=stripe_donation_subscription_id)
 
 
 		del request.session['DonationDetails']
