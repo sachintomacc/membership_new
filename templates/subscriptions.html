@@ -21,8 +21,7 @@
 		{% for membership in  membership_details  %}
 
 		<li>{{membership.membership_type.name}} membership
-
-			{% if membership_detail.membership_term == 'M' %}
+			{% if membership.membership_term == 'M' %}
 			(${{ membership.membership_type.stripe_monthly_price_id|get_stripe_price_details }}/month)
 
 			{% else %}
