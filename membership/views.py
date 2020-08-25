@@ -429,6 +429,20 @@ def subscription_payment_failed(sender, **kwargs):
 	membership_detail.save()
 
 
+@receiver(WEBHOOK_SIGNALS['invoice.payment_succeeded'])
+def subscription_renewed(sender, **kwargs):
+	amount = kwargs['event'].data['object']['items']['data'][0]['plan']['amount']/100
+
+	customer_id = kwargs['event'].data['object']['customer']
+
+	# fetch the user profile of the customer and mark as non-member
+	user_profile = UserProfile.objects.get(stripe_customer_id=customer_id)
+	user_profile.is_member = False
+	user_profile.save()
+	# log to membership payment history
+	log_to_member_payment_history(user=user_profile.user,amount=amount,description='Membership Renewal')
+
+
 # load City names on select on Country in Membership Form
 def load_cities(request):
 	country_id = request.GET.get('country_id')
